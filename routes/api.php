@@ -30,8 +30,9 @@ Route::post('login', [AuthController::class, 'login']);
 Route::middleware('auth:sanctum')->post('logout', [AuthController::class, 'logout']);
 Route::middleware('auth:sanctum')->get('user', [AuthController::class, 'user']);
 
-//Rutas de recursos
+
 // Protege todas las rutas relacionadas con incidencias
+Route::middleware('auth:sanctum')->get('/asistencias/semanal', [AsistenciaController::class, 'resumenSemanal']);
 Route::middleware('auth:sanctum')->group(function () {
     Route::apiResource('incidencias', IncidenciaController::class);
     Route::post('incidencias/{incidencia}/documento', [IncidenciaDocumentoController::class, 'store']);

@@ -47,4 +47,10 @@ class Usuario extends Authenticatable
     {
         return $this->rol_id == 1; // Ajusta según tu estructura de roles
     }
+
+    public function horarios()
+    {
+        return $this->hasMany(Horario::class);
+    }
+
 }
