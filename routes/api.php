@@ -37,7 +37,7 @@ Route::get('/asistencias/semanal-admin', [AsistenciaController::class, 'resumenS
 Route::middleware('auth:sanctum')->group(function () {
     Route::apiResource('incidencias', IncidenciaController::class);
     Route::post('incidencias/{incidencia}/documento', [IncidenciaDocumentoController::class, 'store']);
-    Route::post('incidencias/{incidencia}/estatus', [IncidenciaController::class, 'cambiarEstatus']);
+    Route::put('incidencias/{incidencia}/estatus', [IncidenciaController::class, 'cambiarEstatus']);
     Route::apiResource('asistencias', AsistenciaController::class);
     Route::post('asistencias/{asistencia}/foto', [AsistenciaFotoController::class, 'store']);
     Route::apiResource('reportes-generados', ReporteGeneradoController::class)->except(['update']);

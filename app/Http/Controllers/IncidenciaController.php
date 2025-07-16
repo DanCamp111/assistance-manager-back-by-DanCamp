@@ -161,7 +161,6 @@ class IncidenciaController extends Controller
             'estatus' => $request->estatus,
             'observaciones' => $request->observaciones,
             'supervisor_id' => $request->supervisor_id,
-            'fecha_revision' => now()
         ]);
 
         return response()->json($incidencia);

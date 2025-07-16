@@ -40,6 +40,8 @@ class Incidencia extends Model
         'fecha_revision' => 'datetime',
     ];
 
+    protected $appends = ['nombre_completo']; // <-- Agregado aquí
+
     public function usuario()
     {
         return $this->belongsTo(Usuario::class, 'usuario_id');
@@ -48,5 +50,14 @@ class Incidencia extends Model
     public function supervisor()
     {
         return $this->belongsTo(Usuario::class, 'supervisor_id');
+    }
+
+    public function getNombreCompletoAttribute()
+    {
+        if (!$this->relationLoaded('usuario') || !$this->usuario) {
+            return null;
+        }
+
+        return trim("{$this->usuario->name} {$this->usuario->last_name} {$this->usuario->middle_name}");
     }
 }
