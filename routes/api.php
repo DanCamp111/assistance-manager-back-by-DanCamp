@@ -33,6 +33,7 @@ Route::middleware('auth:sanctum')->get('user', [AuthController::class, 'user']);
 
 // Protege todas las rutas relacionadas con incidencias
 Route::middleware('auth:sanctum')->get('/asistencias/semanal', [AsistenciaController::class, 'resumenSemanal']);
+Route::get('/asistencias/semanal-admin', [AsistenciaController::class, 'resumenSemanalAdmin']) ->middleware('auth:sanctum');
 Route::middleware('auth:sanctum')->group(function () {
     Route::apiResource('incidencias', IncidenciaController::class);
     Route::post('incidencias/{incidencia}/documento', [IncidenciaDocumentoController::class, 'store']);

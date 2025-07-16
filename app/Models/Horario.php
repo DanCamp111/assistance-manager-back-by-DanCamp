@@ -21,10 +21,10 @@ class Horario extends Model
     ];
 
     protected $casts = [
-        'hora_entrada' => 'datetime:H:i:s',
-        'hora_salida' => 'datetime:H:i:s',
-        'hora_comida_inicio' => 'datetime:H:i:s',
-        'hora_comida_fin' => 'datetime:H:i:s',
+        'hora_entrada' => 'datetime:H:i',
+        'hora_salida' => 'datetime:H:i',
+        'hora_comida_inicio' => 'datetime:H:i',
+        'hora_comida_fin' => 'datetime:H:i',
     ];
 
     public function usuario()
