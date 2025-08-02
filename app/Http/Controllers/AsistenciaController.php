@@ -287,9 +287,12 @@ class AsistenciaController extends Controller
                 // Obtener horario para este usuario y día
                 $horario = $horarios
                     ->get($usuario->id, collect())
-                    ->get($diaSemanaEspanol, $horarios
-                        ->get(null, collect())
-                        ->get($diaSemanaEspanol));
+                    ->get($diaSemanaEspanol)
+                    ?? $horarios->get(null, collect())->get($diaSemanaEspanol);
+
+                // Si hay más de un horario para ese día, tomamos el primero
+                 $horario = $horario instanceof \Illuminate\Support\Collection ? $horario->first() : $horario;
+
 
                 // Obtener registros de asistencia para este usuario y fecha
                 $registrosDia = $asistencias
@@ -307,7 +310,7 @@ class AsistenciaController extends Controller
                 $retardo = 'No';
                 if ($horaEntrada && $horario) {
                     $horaEntradaCarbon = Carbon::parse($horaEntrada);
-                    $horaEsperadaCarbon = Carbon::parse($horario->hora_entrada);
+                    $horaEsperadaCarbon = Carbon::parse(optional($horario->first())->hora_entrada);
 
                     if ($horaEntradaCarbon->greaterThan($horaEsperadaCarbon)) {
                         $retardo = $horaEntradaCarbon->diffInMinutes($horaEsperadaCarbon) . ' min';
@@ -317,7 +320,8 @@ class AsistenciaController extends Controller
                 // Obtener incidencia para este usuario y fecha
                 $incidencia = $incidencias
                     ->get($usuario->id, collect())
-                    ->get($fechaStr);
+                    ->get($fechaStr, collect())
+                    ->first();
 
                 $resultado[] = [
                     'usuario_id' => $usuario->id,
