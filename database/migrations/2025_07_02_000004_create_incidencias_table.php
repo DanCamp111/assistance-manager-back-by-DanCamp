@@ -16,7 +16,7 @@ return new class extends Migration
             $table->date('fecha_ausencia');
             $table->time('hora_salida')->nullable();
             $table->time('hora_regreso')->nullable();
-            $table->time('hora_transporte')->nullable();
+            $table->decimal('hora_transporte')->nullable();
             $table->string('documento_justificativo')->nullable();
             $table->enum('estatus', ['pendiente', 'aprobado', 'rechazado'])->default('pendiente');
             $table->foreignId('supervisor_id')->nullable()->constrained('usuarios');

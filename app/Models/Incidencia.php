@@ -9,6 +9,10 @@ class Incidencia extends Model
 {
     use HasFactory;
 
+    const ESTATUS_PENDIENTE = 'pendiente';
+    const ESTATUS_APROBADO = 'aprobado';
+    const ESTATUS_RECHAZADO = 'rechazado';
+
     protected $table = 'incidencias';
 
     protected $fillable = [
@@ -22,26 +26,38 @@ class Incidencia extends Model
         'documento_justificativo',
         'estatus',
         'supervisor_id',
-        'observaciones'
+        'observaciones',
+        'fecha_solicitud',
+        'fecha_revision',
     ];
 
     protected $casts = [
         'fecha_ausencia' => 'date',
         'hora_salida' => 'datetime:H:i:s',
         'hora_regreso' => 'datetime:H:i:s',
-        'hora_transporte' => 'datetime:H:i:s',
-        'fecha_solicitud' => 'datetime'
+        'hora_transporte' => 'float',
+        'fecha_solicitud' => 'datetime',
+        'fecha_revision' => 'datetime',
     ];
 
-    // Relación con el usuario que reporta la incidencia
+    protected $appends = ['nombre_completo']; // <-- Agregado aquí
+
     public function usuario()
     {
         return $this->belongsTo(Usuario::class, 'usuario_id');
     }
 
-    // Relación con el supervisor que revisa la incidencia
     public function supervisor()
     {
         return $this->belongsTo(Usuario::class, 'supervisor_id');
+    }
+
+    public function getNombreCompletoAttribute()
+    {
+        if (!$this->relationLoaded('usuario') || !$this->usuario) {
+            return null;
+        }
+
+        return trim("{$this->usuario->name} {$this->usuario->last_name} {$this->usuario->middle_name}");
     }
 }

@@ -30,12 +30,14 @@ Route::post('login', [AuthController::class, 'login']);
 Route::middleware('auth:sanctum')->post('logout', [AuthController::class, 'logout']);
 Route::middleware('auth:sanctum')->get('user', [AuthController::class, 'user']);
 
-//Rutas de recursos
+
 // Protege todas las rutas relacionadas con incidencias
+Route::middleware('auth:sanctum')->get('/asistencias/semanal', [AsistenciaController::class, 'resumenSemanal']);
+Route::get('/asistencias/semanal-admin', [AsistenciaController::class, 'resumenSemanalAdmin']) ->middleware('auth:sanctum');
 Route::middleware('auth:sanctum')->group(function () {
     Route::apiResource('incidencias', IncidenciaController::class);
     Route::post('incidencias/{incidencia}/documento', [IncidenciaDocumentoController::class, 'store']);
-    Route::post('incidencias/{incidencia}/estatus', [IncidenciaController::class, 'cambiarEstatus']);
+    Route::put('incidencias/{incidencia}/estatus', [IncidenciaController::class, 'cambiarEstatus']);
     Route::apiResource('asistencias', AsistenciaController::class);
     Route::post('asistencias/{asistencia}/foto', [AsistenciaFotoController::class, 'store']);
     Route::apiResource('reportes-generados', ReporteGeneradoController::class)->except(['update']);

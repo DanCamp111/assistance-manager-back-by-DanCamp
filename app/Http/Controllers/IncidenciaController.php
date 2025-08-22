@@ -4,8 +4,8 @@ namespace App\Http\Controllers;
 
 use App\Models\Incidencia;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\Rule;
+use Illuminate\Support\Facades\Validator;
 
 class IncidenciaController extends Controller
 {
@@ -17,58 +17,54 @@ class IncidenciaController extends Controller
     public function index(Request $request)
     {
         $user = $request->user();
-        
+
         $query = Incidencia::with(['usuario', 'supervisor'])
             ->orderBy('fecha_solicitud', 'desc');
-        
-        // Filtros básicos
+
         if ($request->has('usuario_id')) {
-            // Solo admin puede filtrar por otros usuarios
-            if ($user->rol_id == 1) { 
+            if ($user->rol_id == 1) {
                 $query->where('usuario_id', $request->usuario_id);
             }
-        } else {
-            // Usuario normal solo ve sus propias incidencias
-            if ($user->rol_id != 1) {
-                $query->where('usuario_id', $user->id);
-            }
+        } elseif ($user->rol_id != 1) {
+            $query->where('usuario_id', $user->id);
         }
-        
-        // Filtros adicionales
+
         if ($request->has('estatus')) {
             $query->where('estatus', $request->estatus);
         }
-        
+
         if ($request->has('fecha_inicio') && $request->has('fecha_fin')) {
             $query->whereBetween('fecha_ausencia', [$request->fecha_inicio, $request->fecha_fin]);
         }
-        
+
         if ($request->has('tipo_incidencia')) {
             $query->where('tipo_incidencia', $request->tipo_incidencia);
         }
-        
+
         return response()->json($query->paginate($request->get('per_page', 15)));
     }
 
     public function store(Request $request)
     {
         $user = $request->user();
-        
+
         $validator = Validator::make($request->all(), [
             'tipo_incidencia' => 'required|string|max:50',
             'motivo' => 'required|string',
             'fecha_ausencia' => 'required|date',
             'hora_salida' => 'nullable|date_format:H:i:s',
             'hora_regreso' => 'nullable|date_format:H:i:s|after:hora_salida',
-            'hora_transporte' => 'nullable|date_format:H:i:s',
-            'supervisor_id' => 'nullable|exists:usuarios,id'
+            'hora_transporte' => 'nullable|numeric|min:0|max:24',
+            'supervisor_id' => 'nullable|exists:usuarios,id',
         ]);
 
-        // Asignar automáticamente el usuario logueado
-        $validator->after(function ($validator) use ($user) {
-            $data = $validator->getData();
-            if (isset($data['usuario_id']) && $data['usuario_id'] != $user->id && $user->rol_id != 1) {
-                $validator->errors()->add('usuario_id', 'No puedes crear incidencias para otros usuarios');
+        $validator->after(function ($validator) use ($request, $user) {
+            $exists = Incidencia::where('usuario_id', $user->id)
+                ->whereDate('fecha_ausencia', $request->fecha_ausencia)
+                ->exists();
+
+            if ($exists) {
+                $validator->errors()->add('fecha_ausencia', 'Ya existe una incidencia registrada para esta fecha.');
             }
         });
 
@@ -85,7 +81,7 @@ class IncidenciaController extends Controller
         $data['fecha_solicitud'] = now();
 
         $incidencia = Incidencia::create($data);
-        
+
         return response()->json($incidencia, 201);
     }
 
@@ -99,12 +95,9 @@ class IncidenciaController extends Controller
     {
         $user = $request->user();
         $incidencia = Incidencia::findOrFail($id);
-        
-        // Validar permisos
+
         if ($incidencia->usuario_id != $user->id && $user->rol_id != 1) {
-            return response()->json([
-                'message' => 'No autorizado'
-            ], 403);
+            return response()->json(['message' => 'No autorizado'], 403);
         }
 
         $validator = Validator::make($request->all(), [
@@ -113,8 +106,9 @@ class IncidenciaController extends Controller
             'fecha_ausencia' => 'sometimes|date',
             'hora_salida' => 'nullable|date_format:H:i:s',
             'hora_regreso' => 'nullable|date_format:H:i:s|after:hora_salida',
-            'hora_transporte' => 'nullable|date_format:H:i:s',
-            'documento_justificativo' => 'nullable|string'
+            'hora_transporte' => 'nullable|numeric|min:0|max:24',
+            'documento_justificativo' => 'nullable|string',
+            'estatus' => ['sometimes', Rule::in(['pendiente', 'aprobado', 'rechazado'])],
         ]);
 
         if ($validator->fails()) {
@@ -124,7 +118,14 @@ class IncidenciaController extends Controller
             ], 422);
         }
 
-        $incidencia->update($validator->validated());
+        $data = $validator->validated();
+
+        if (array_key_exists('estatus', $data)) {
+            $data['fecha_revision'] = now();
+        }
+
+        $incidencia->update($data);
+
         return response()->json($incidencia);
     }
 
@@ -132,12 +133,9 @@ class IncidenciaController extends Controller
     {
         $user = $request->user();
         $incidencia = Incidencia::findOrFail($id);
-        
-        // Solo admin o dueño puede eliminar
+
         if ($incidencia->usuario_id != $user->id && $user->rol_id != 1) {
-            return response()->json([
-                'message' => 'No autorizado'
-            ], 403);
+            return response()->json(['message' => 'No autorizado'], 403);
         }
 
         $incidencia->delete();
@@ -148,12 +146,9 @@ class IncidenciaController extends Controller
     {
         $user = $request->user();
         $incidencia = Incidencia::findOrFail($id);
-        
-        // Solo admin o supervisor puede cambiar estatus
+
         if ($user->rol_id != 1 && $user->id != $incidencia->supervisor_id) {
-            return response()->json([
-                'message' => 'No autorizado'
-            ], 403);
+            return response()->json(['message' => 'No autorizado'], 403);
         }
 
         $request->validate([
@@ -166,7 +161,6 @@ class IncidenciaController extends Controller
             'estatus' => $request->estatus,
             'observaciones' => $request->observaciones,
             'supervisor_id' => $request->supervisor_id,
-            'fecha_revision' => now()
         ]);
 
         return response()->json($incidencia);

@@ -43,8 +43,30 @@ class Usuario extends Authenticatable
         return $this->belongsTo(Carrera::class);
     }
 
+    public function horarios()
+    {
+        return $this->hasMany(Horario::class);
+    }
+
+    // Añade estas relaciones que faltaban
+    public function asistencias()
+    {
+        return $this->hasMany(Asistencia::class);
+    }
+
+    public function incidencias()
+    {
+        return $this->hasMany(Incidencia::class);
+    }
+
     public function esAdmin()
     {
-        return $this->rol_id == 1; // Ajusta según tu estructura de roles
+        return $this->rol_id == 1;
+    }
+
+    // Método para obtener el nombre completo
+    public function getNombreCompletoAttribute()
+    {
+        return trim("{$this->nombre} {$this->apellido_paterno} {$this->apellido_materno}");
     }
 }
